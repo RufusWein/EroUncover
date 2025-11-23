@@ -29,7 +29,8 @@ TextureAsset::loadAsset(AAssetManager *assetManager, const std::string &assetPat
     auto stride = AImageDecoder_getMinimumStride(pAndroidDecoder);
 
     // Get the bitmap data of the image
-    auto upAndroidImageData = std::make_unique<std::vector<uint8_t>>(height * stride);
+    auto upAndroidImageData = std::unique_ptr<std::vector<uint8_t>>(new std::vector<uint8_t>(height * stride));
+
     auto decodeResult = AImageDecoder_decodeImage(
             pAndroidDecoder,
             upAndroidImageData->data(),
