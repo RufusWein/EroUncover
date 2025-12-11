@@ -1,4 +1,4 @@
-package com.example.myapplication;
+package com.rgpedroa.erouncovergame;
 
 import org.junit.Test;
 

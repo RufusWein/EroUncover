@@ -4,10 +4,10 @@
 #include "Utility.h"
 
 std::shared_ptr<TextureAsset>
-TextureAsset::loadAsset(AAssetManager *assetManager, const std::string &assetPath) {
+TextureAsset::loadAsset(AAssetManager *gestorDeRecursos, const std::string &assetPath) {
     // Get the image from asset manager
     auto pAndroidRobotPng = AAssetManager_open(
-            assetManager,
+            gestorDeRecursos,
             assetPath.c_str(),
             AASSET_MODE_BUFFER);
 
@@ -24,18 +24,18 @@ TextureAsset::loadAsset(AAssetManager *assetManager, const std::string &assetPat
     pAndroidHeader = AImageDecoder_getHeaderInfo(pAndroidDecoder);
 
     // important metrics for sending to GL
-    auto width = AImageDecoderHeaderInfo_getWidth(pAndroidHeader);
-    auto height = AImageDecoderHeaderInfo_getHeight(pAndroidHeader);
-    auto stride = AImageDecoder_getMinimumStride(pAndroidDecoder);
+    auto ancho = AImageDecoderHeaderInfo_getWidth(pAndroidHeader);
+    auto altura = AImageDecoderHeaderInfo_getHeight(pAndroidHeader);
+    auto profundidad = AImageDecoder_getMinimumStride(pAndroidDecoder);
 
     // Get the bitmap data of the image
-    auto upAndroidImageData = std::unique_ptr<std::vector<uint8_t>>(new std::vector<uint8_t>(height * stride));
+    auto imagenDeAndroid = std::unique_ptr<std::vector<uint8_t>>(new std::vector<uint8_t>(altura * profundidad));
 
     auto decodeResult = AImageDecoder_decodeImage(
             pAndroidDecoder,
-            upAndroidImageData->data(),
-            stride,
-            upAndroidImageData->size());
+            imagenDeAndroid->data(),
+            profundidad,
+            imagenDeAndroid->size());
     assert(decodeResult == ANDROID_IMAGE_DECODER_SUCCESS);
 
     // Get an opengl texture
@@ -52,15 +52,15 @@ TextureAsset::loadAsset(AAssetManager *assetManager, const std::string &assetPat
 
     // Load the texture into VRAM
     glTexImage2D(
-            GL_TEXTURE_2D, // target
-            0, // mip level
-            GL_RGBA, // internal format, often advisable to use BGR
-            width, // width of the texture
-            height, // height of the texture
-            0, // border (always 0)
-            GL_RGBA, // format
-            GL_UNSIGNED_BYTE, // type
-            upAndroidImageData->data() // Data to upload
+    GL_TEXTURE_2D, // target
+    0, // mip level
+    GL_RGBA, // internal format, often advisable to use BGR
+    ancho, // ancho of the texture
+    altura, // altura of the texture
+    0, // border (always 0)
+    GL_RGBA, // format
+    GL_UNSIGNED_BYTE, // type
+    imagenDeAndroid->data() // Data to upload
     );
 
     // generate mip levels. Not really needed for 2D, but good to do

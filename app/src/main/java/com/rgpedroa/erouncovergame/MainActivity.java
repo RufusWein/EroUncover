@@ -1,6 +1,4 @@
-package com.example.myapplication;
-
-import android.view.View;
+package com.rgpedroa.erouncovergame;
 
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -10,7 +8,7 @@ import com.google.androidgamesdk.GameActivity;
 
 public class MainActivity extends GameActivity {
     static {
-        System.loadLibrary("myapplication");
+        System.loadLibrary("gameEngineLibInC");
     }
 
     @Override
