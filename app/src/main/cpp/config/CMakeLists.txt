@@ -8,15 +8,16 @@ project("gameEngineLibInC")
 # Creates your game shared library. The name must be the same as the
 # one used for loading in your Kotlin/Java or AndroidManifest.txt files.
 add_library(gameEngineLibInC SHARED
-        main.cpp
-        AndroidOut.cpp
-        Renderer.cpp
-        Shader.cpp
-        TextureAsset.cpp
-        Utility.cpp)
+        ../config/main.cpp
+        ../components/AndroidOut.cpp
+        ../components/Renderer.cpp
+        ../components/Shader.cpp
+        ../components/TextureAsset.cpp
+        ../components/Utility.cpp)
 
 # Searches for a package provided by the game activity dependency
-find_package(game-activity REQUIRED CONFIG)
+# find_package(../../../../../../../.gradle/caches/8.13/transforms/44d60bf8f9709d60e2faadff764e3cfe/transformed/games-activity-4.0.0/prefab/modules/game-activity_static/include/game-activity REQUIRED .)
+find_package(game-activity REQUIRED CONFIG.)
 
 # Forces the linker to keep the JNI entry point for GameActivity
 set(CMAKE_SHARED_LINKER_FLAGS

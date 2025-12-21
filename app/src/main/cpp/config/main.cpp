@@ -3,8 +3,8 @@
 #include <game-activity/native_app_glue/android_native_app_glue.h>
 #include <game-activity/GameActivity.h>
 
-#include "AndroidOut.h"
-#include "Renderer.h"
+#include "../components/AndroidOut.h"
+#include "../components/Renderer.h"
 
 extern "C" {
 
