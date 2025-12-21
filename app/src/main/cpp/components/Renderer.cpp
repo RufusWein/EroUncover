@@ -99,8 +99,6 @@ Renderer::Renderer(android_app* pApp) :
 
     // El resto de la inicialización de Renderer
     initRenderer();
-    //createShader();
-    //createModels();
 }
 
 Renderer::~Renderer() {
@@ -275,9 +273,7 @@ void Renderer::updateRenderArea() {
  * @brief Create any demo models we want for this demo.
  */
 void Renderer::createModels() {
-    // Create a model and put it in the back of the render list.
-    //models_.emplace_back(vertices, indices, spAndroidRobotTexture);
-    // Llamamos a init() para pasarle la referencia al gestor de assets
+
     modelManager_.addModel( "karola.png");
 }
 
