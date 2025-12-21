@@ -12,6 +12,7 @@ add_library(gameEngineLibInC SHARED
         ../components/AndroidOut.cpp
         ../components/Renderer.cpp
         ../components/Shader.cpp
+        ../components/ModelManager.cpp
         ../components/TextureAsset.cpp
         ../components/Utility.cpp)
 

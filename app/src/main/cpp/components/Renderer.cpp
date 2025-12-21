@@ -84,6 +84,25 @@ static constexpr float kProjectionNearPlane = -1.f;
  */
 static constexpr float kProjectionFarPlane = 1.f;
 
+Renderer::Renderer(android_app* pApp) :
+        app_(pApp),
+        display_(EGL_NO_DISPLAY),
+        surface_(EGL_NO_SURFACE),
+        context_(EGL_NO_CONTEXT),
+        width_(0),
+        height_(0),
+        shaderNeedsNewProjectionMatrix_(true)
+// modelManager_ ya se ha construido aquí por defecto
+{
+    // Llamamos a init() para pasarle la referencia al gestor de assets
+    modelManager_.init(app_);
+
+    // El resto de la inicialización de Renderer
+    initRenderer();
+    //createShader();
+    //createModels();
+}
+
 Renderer::~Renderer() {
     if (display_ != EGL_NO_DISPLAY) {
         eglMakeCurrent(display_, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
@@ -136,11 +155,7 @@ void Renderer::render() {
     // Render all the models. There's no depth testing in this sample so they're accepted in the
     // order provided. But the sample EGL setup requests a 24 bit depth buffer so you could
     // configure it at the end of initRenderer
-    if (!models_.empty()) {
-        for (const auto &model: models_) {
-            shader_->drawModel(model);
-        }
-    }
+    modelManager_.drawAll(shader_.get());
 
     // Present the rendered image. This is an implicit glFlush.
     auto swapResult = eglSwapBuffers(display_, surface_);
@@ -260,33 +275,10 @@ void Renderer::updateRenderArea() {
  * @brief Create any demo models we want for this demo.
  */
 void Renderer::createModels() {
-    /*
-     * This is a square:
-     * 0 --- 1
-     * | \   |
-     * |  \  |
-     * |   \ |
-     * 3 --- 2
-     */
-    std::vector<Vertex> vertices = {
-            Vertex(Vector3{1, 1, 0}, Vector2{0, 0}), // 0
-            Vertex(Vector3{-1, 1, 0}, Vector2{1, 0}), // 1
-            Vertex(Vector3{-1, -1, 0}, Vector2{1, 1}), // 2
-            Vertex(Vector3{1, -1, 0}, Vector2{0, 1}) // 3
-    };
-    std::vector<Index> indices = {
-            0, 1, 2, 0, 2, 3
-    };
-
-    // loads an image and assigns it to the square.
-    //
-    // Note: there is no texture management in this sample, so if you reuse an image be careful not
-    // to load it repeatedly. Since you get a shared_ptr you can safely reuse it in many models.
-    auto assetManager = app_->activity->assetManager;
-    auto spAndroidRobotTexture = TextureAsset::loadAsset(assetManager, "android_robot.png");
-
     // Create a model and put it in the back of the render list.
-    models_.emplace_back(vertices, indices, spAndroidRobotTexture);
+    //models_.emplace_back(vertices, indices, spAndroidRobotTexture);
+    // Llamamos a init() para pasarle la referencia al gestor de assets
+    modelManager_.addModel( "karola.png");
 }
 
 void Renderer::handleInput() {

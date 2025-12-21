@@ -6,6 +6,7 @@
 
 #include "Model.h"
 #include "Shader.h"
+#include "ModelManager.h"
 
 struct android_app;
 
@@ -14,16 +15,14 @@ public:
     /*!
      * @param pApp the android_app this Renderer belongs to, needed to configure GL
      */
-    inline Renderer(android_app *pApp) :
-            app_(pApp),
-            display_(EGL_NO_DISPLAY),
-            surface_(EGL_NO_SURFACE),
-            context_(EGL_NO_CONTEXT),
-            width_(0),
-            height_(0),
-            shaderNeedsNewProjectionMatrix_(true) {
-        initRenderer();
-    }
+    explicit Renderer(android_app *pApp);//:
+//            app_(pApp),
+//            display_(EGL_NO_DISPLAY),
+//            surface_(EGL_NO_SURFACE),
+//            context_(EGL_NO_CONTEXT),
+//            width_(0),
+//            height_(0),
+//            shaderNeedsNewProjectionMatrix_(true) {}
 
     virtual ~Renderer();
 
@@ -68,7 +67,9 @@ private:
     bool shaderNeedsNewProjectionMatrix_;
 
     std::unique_ptr<Shader> shader_;
-    std::vector<Model> models_;
+    //std::vector<Model> models_;
+    ModelManager modelManager_;
+
 };
 
 #endif //ANDROIDGLINVESTIGATIONS_RENDERER_H
