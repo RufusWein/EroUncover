@@ -69,7 +69,7 @@ private:
     std::unique_ptr<Shader> shader_;
     //std::vector<Model> models_;
     ModelManager modelManager_;
-
+    float projectionMatrix_[16] = {0};
 };
 
 #endif //ANDROIDGLINVESTIGATIONS_RENDERER_H

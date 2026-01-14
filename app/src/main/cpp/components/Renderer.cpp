@@ -44,10 +44,12 @@ in vec2 inUV;
 out vec2 fragUV;
 
 uniform mat4 uProjection;
+uniform mat4 uModel; // <-- NUEVA MATRIZ
 
 void main() {
     fragUV = inUV;
-    gl_Position = uProjection * vec4(inPosition, 1.0);
+    // Aplicar primero la transformación del modelo y luego la de la cámara
+    gl_Position = uProjection * uModel * vec4(inPosition, 1.0);
 }
 )vertex";
 
@@ -95,7 +97,7 @@ Renderer::Renderer(android_app* pApp) :
 // modelManager_ ya se ha construido aquí por defecto
 {
     // Llamamos a init() para pasarle la referencia al gestor de assets
-    modelManager_.init(app_);
+    modelManager_.init(app_, 1080.f, 1920.f);
 
     // El resto de la inicialización de Renderer
     initRenderer();
@@ -121,43 +123,37 @@ void Renderer::render() {
     // Check to see if the surface has changed size. This is _necessary_ to do every frame when
     // using immersive mode as you'll get no other notification that your renderable area has
     // changed.
+    aout << "Renderizando!!!!\n" << std::endl;
+
     updateRenderArea();
-
-    // When the renderable area changes, the projection matrix has to also be updated. This is true
-    // even if you change from the sample orthographic projection matrix as your aspect ratio has
-    // likely changed.
+    aout << "Actualizado el Area de renderizado!!!!\n" << std::endl;
     if (shaderNeedsNewProjectionMatrix_) {
-        // a placeholder projection matrix allocated on the stack. Column-major memory layout
-        float projectionMatrix[16] = {0};
-
-        // build an orthographic projection matrix for 2d rendering
+        // Construimos la matriz de proyección de la cámara (VISIÓN)
         Utility::buildOrthographicMatrix(
-                projectionMatrix,
+                projectionMatrix_,
                 kProjectionHalfHeight,
                 float(width_) / height_,
                 kProjectionNearPlane,
                 kProjectionFarPlane);
-
-        // send the matrix to the shader
-        // Note: the shader must be active for this to work. Since we only have one shader for this
-        // demo, we can assume that it's active.
-        shader_->setProjectionMatrix(projectionMatrix);
-
-        // make sure the matrix isn't generated every frame
         shaderNeedsNewProjectionMatrix_ = false;
     }
-
     // clear the color buffer
     glClear(GL_COLOR_BUFFER_BIT);
 
+    // 1. Calcular las dimensiones de la cámara que ModelManager necesita
+    const float cameraViewHeight = kProjectionHalfHeight * 2.f;
+    const float cameraViewWidth = cameraViewHeight * (float(width_) / height_);
+    aout << "Antes del drawAll!!!!\n" << std::endl;
     // Render all the models. There's no depth testing in this sample so they're accepted in the
     // order provided. But the sample EGL setup requests a 24 bit depth buffer so you could
     // configure it at the end of initRenderer
-    modelManager_.drawAll(shader_.get());
-
+    modelManager_.drawAll(shader_.get(), projectionMatrix_, cameraViewWidth, cameraViewHeight);
+    aout << "Despues del drawAll!!!!\n" << std::endl;
     // Present the rendered image. This is an implicit glFlush.
     auto swapResult = eglSwapBuffers(display_, surface_);
     assert(swapResult == EGL_TRUE);
+
+    aout << "Renderizado finalizado!!!!\n" << std::endl;
 }
 
 void Renderer::initRenderer() {
@@ -232,14 +228,21 @@ void Renderer::initRenderer() {
     PRINT_GL_STRING(GL_RENDERER);
     PRINT_GL_STRING(GL_VERSION);
     PRINT_GL_STRING_AS_LIST(GL_EXTENSIONS);
-
+    aout << "Carga del shader!!!!\n" << std::endl;
     shader_ = std::unique_ptr<Shader>(
             Shader::loadShader(vertex, fragment, "inPosition", "inUV", "uProjection"));
-    assert(shader_);
 
+    if (!shader_) {
+        aout << "¡ERROR CRÍTICO! El shader no se pudo cargar. Revisa los nombres de los atributos y uniforms." << std::endl;
+        // Aquí puedes lanzar una excepción o retornar para evitar el crash posterior
+        return;
+    }
+
+    assert(shader_);
+    aout << "Shader cargado!!!!\n" << std::endl;
     // Note: there's only one shader in this demo, so I'll activate it here. For a more complex game
     // you'll want to track the active shader and activate/deactivate it as necessary
-    shader_->activate();
+    // shader_->activate();
 
     // setup any other gl related global states
     glClearColor(CORNFLOWER_BLUE);
@@ -264,7 +267,9 @@ void Renderer::updateRenderArea() {
         height_ = height;
         glViewport(0, 0, width, height);
 
-        // make sure that we lazily recreate the projection matrix before we render
+        // 2. Notificamos al ModelManager del nuevo tamaño de pantalla
+        modelManager_.updateScreenSize(width_, height_);
+
         shaderNeedsNewProjectionMatrix_ = true;
     }
 }
@@ -275,6 +280,8 @@ void Renderer::updateRenderArea() {
 void Renderer::createModels() {
 
     modelManager_.addModel( "karola.png");
+    aout << "Model added!!!!\n" << std::endl;
+
 }
 
 void Renderer::handleInput() {

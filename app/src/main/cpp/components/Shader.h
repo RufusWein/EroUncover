@@ -15,6 +15,11 @@ class Model;
  */
 class Shader {
 public:
+
+    // --- DECLARACIÓN DEL CONSTRUCTOR CORREGIDA ---
+    // Este constructor ahora acepta la ubicación del uniform 'uModel'.
+    Shader(GLuint program, GLint position, GLint uv, GLint projectionMatrix, GLint modelMatrix);
+
     /*!
      * Loads a shader given the full sourcecode and names for necessary attributes and uniforms to
      * link to. Returns a valid shader on success or null on failure. Shader resources are
@@ -55,13 +60,13 @@ public:
      * Renders a single model
      * @param model a model to render
      */
-    void drawModel(const Model &model) const;
+    void drawModel(const Model &model, const float* modelMatrix) const;
 
     /*!
      * Sets the model/view/projection matrix in the shader.
      * @param projectionMatrix sixteen floats, column major, defining an OpenGL projection matrix.
      */
-    void setProjectionMatrix(float *projectionMatrix) const;
+    void setProjectionMatrix(const float *projectionMatrix) const;
 
 private:
     /*!
@@ -79,7 +84,7 @@ private:
      * @param uv the attribute location of the uv coordinates
      * @param projectionMatrix the uniform location of the projection matrix
      */
-    constexpr Shader(
+    /*constexpr Shader(
             GLuint program,
             GLint position,
             GLint uv,
@@ -87,12 +92,14 @@ private:
             : program_(program),
               position_(position),
               uv_(uv),
-              projectionMatrix_(projectionMatrix) {}
+              projectionMatrix_(projectionMatrix) {}*/
 
     GLuint program_;
     GLint position_;
     GLint uv_;
     GLint projectionMatrix_;
+
+    GLint modelMatrix_ = -1; // Nuevo miembro
 };
 
 #endif //ANDROIDGLINVESTIGATIONS_SHADER_H
