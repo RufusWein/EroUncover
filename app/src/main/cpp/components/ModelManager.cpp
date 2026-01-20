@@ -15,36 +15,50 @@ void ModelManager::drawAll(Shader* shader, const float* projectionMatrix, float 
         return;
     }
 
-    // --- LÓGICA DE ESCALADO CORREGIDA Y LIMPIA ---
-
     const float designAspect = designWidth_ / designHeight_;
     const float screenAspect = screenWidth_ / screenHeight_;
 
-    // 1. ELIMINAR ESTAS LÍNEAS
-    // const float cameraViewHeight = kProjectionHalfHeight * 2.f; // <-- Se va
-    // const float cameraViewWidth = cameraViewHeight * screenAspect; // <-- Se va
-
-    // 2. Usar directamente los parámetros recibidos
-    float scaleX, scaleY;
+    float baseScaleX, baseScaleY;
 
     if (screenAspect > designAspect) {
-        // La pantalla es más ancha que el diseño. El alto manda.
-        scaleY = cameraViewHeight;
-        scaleX = scaleY * designAspect;
+        baseScaleY = cameraViewHeight;
+        baseScaleX = baseScaleY * designAspect;
     } else {
-        // La pantalla es más alta o igual que el diseño. El ancho manda.
-        scaleX = cameraViewWidth;
-        scaleY = scaleX / designAspect;
+        baseScaleX = cameraViewWidth;
+        baseScaleY = baseScaleX / designAspect;
     }
-
-    // El resto de la función se queda igual...
-    float modelMatrix[16];
-    Matrix::buildScale(modelMatrix, scaleX, scaleY, 1.f);
 
     shader->activate();
     shader->setProjectionMatrix(projectionMatrix);
 
-    for (const auto& model : models_) {
+    // Iteramos sobre el mapa de modelos
+    for (const auto& item : models_) {
+        const Model& model = *(item.second);
+
+        // 1. Calculamos la escala final:
+        // (Escala del sistema) * (Escala individual del modelo)
+        float finalScaleX = baseScaleX * model.getScale();
+        float finalScaleY = baseScaleY * model.getScale();
+
+        // 2. Calculamos la posición:
+        // Convertimos las coordenadas de "espacio de diseño" a "espacio de cámara"
+        // Como el cuadrado 1x1 está centrado, (0,0) en tu diseño será el centro de la pantalla.
+        float posX = model.getPosition().x * (baseScaleX / designWidth_);
+        float posY = model.getPosition().y * (baseScaleY / designHeight_);
+        float posZ = model.getPosition().z; // La Z sirve para el orden de capas (Z-Order)
+
+        // 3. Construimos la matriz de transformación (Model Matrix)
+        float modelMatrix[16];
+
+        // Primero escalamos el cuadrado 1x1
+        Matrix::buildScale(modelMatrix, finalScaleX, finalScaleY, 1.f);
+
+        // Luego aplicamos la traslación (posición) directamente en los componentes de la matriz
+        // m[12]=X, m[13]=Y, m[14]=Z
+        modelMatrix[12] = posX;
+        modelMatrix[13] = posY;
+        modelMatrix[14] = posZ;
+
         shader->drawModel(model, modelMatrix);
     }
 }
@@ -55,12 +69,7 @@ void ModelManager::updateScreenSize(float screenWidth, float screenHeight) {
     screenHeight_ = screenHeight;
 }
 
-// Implementación de los métodos para añadir modelos
-void ModelManager::addModel(const Model& model) {
-    models_.push_back(model);
-}
-
-void ModelManager::addModel(const std::string& textureName) {
+void ModelManager::addModel(const std::string& id, const std::string& textureName) {
     assert(assetManager_ != nullptr && "ModelManager::init() must be called first!");
 
     auto texture = TextureAsset::loadAsset(assetManager_, textureName);
@@ -68,11 +77,6 @@ void ModelManager::addModel(const std::string& textureName) {
         // La textura no se pudo cargar, no añadir el modelo
         return;
     }
-
-    // ¡IMPORTANTE! La geometría ahora debe estar en el "espacio de diseño".
-    // Si tu diseño es 1080x1920, un cuadrado que ocupe toda la pantalla sería:
-    const float halfW = designWidth_ / 2.f;
-    const float halfH = designHeight_ / 2.f;
 
     // --- CORRECCIÓN CLAVE ---
     // La geometría ahora se define en un espacio normalizado (de -0.5 a 0.5)
@@ -85,7 +89,19 @@ void ModelManager::addModel(const std::string& textureName) {
     };
     std::vector<Index> indices = { 0, 1, 2, 0, 2, 3 };
 
-    models_.emplace_back(vertices, indices, texture);
+    models_[id] = std::unique_ptr<Model>(new Model(vertices, indices, texture));
+}
+
+Model* ModelManager::getModel(const std::string& id) {
+    auto it = models_.find(id);
+    if (it != models_.end()) {
+        return it->second.get(); // Retornamos puntero al modelo encontrado
+    }
+    return nullptr; // No existe
+}
+
+void ModelManager::removeModel(const std::string& id) {
+    models_.erase(id);
 }
 
 void ModelManager::clear() {

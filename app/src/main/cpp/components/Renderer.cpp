@@ -138,7 +138,9 @@ void Renderer::render() {
         shaderNeedsNewProjectionMatrix_ = false;
     }
     // clear the color buffer
-    glClear(GL_COLOR_BUFFER_BIT);
+    //glClear(GL_COLOR_BUFFER_BIT);
+    // En Renderer::render()
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // <-- Añade el depth buffer bit
 
     // 1. Calcular las dimensiones de la cámara que ModelManager necesita
     const float cameraViewHeight = kProjectionHalfHeight * 2.f;
@@ -147,7 +149,9 @@ void Renderer::render() {
     // Render all the models. There's no depth testing in this sample so they're accepted in the
     // order provided. But the sample EGL setup requests a 24 bit depth buffer so you could
     // configure it at the end of initRenderer
+
     modelManager_.drawAll(shader_.get(), projectionMatrix_, cameraViewWidth, cameraViewHeight);
+
     aout << "Despues del drawAll!!!!\n" << std::endl;
     // Present the rendered image. This is an implicit glFlush.
     auto swapResult = eglSwapBuffers(display_, surface_);
@@ -251,6 +255,9 @@ void Renderer::initRenderer() {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL); // Dibuja si está más cerca o a la misma distancia
+
     // get some demo models into memory
     createModels();
 }
@@ -279,9 +286,23 @@ void Renderer::updateRenderArea() {
  */
 void Renderer::createModels() {
 
-    modelManager_.addModel( "karola.png");
+    modelManager_.addModel("karola","karola.png");
     aout << "Model added!!!!\n" << std::endl;
 
+    modelManager_.addModel("logo","android_robot.png");
+    aout << "Model robot added!!!!\n" << std::endl;
+
+    Model* karola = modelManager_.getModel("karola");
+    if (karola) {
+        karola->setPosition(0, 0, -0.1f);
+        karola->setScale(0.5f);
+    }
+
+    Model* myModel = modelManager_.getModel("logo");
+    if (myModel) {
+        myModel->setPosition(0, 0, 0.1f); // Justo en el mismo sitio pero con Z mayor
+        myModel->setScale(0.2f); // Más pequeño para ver si resalta
+    }
 }
 
 void Renderer::handleInput() {

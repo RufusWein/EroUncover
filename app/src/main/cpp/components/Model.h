@@ -56,6 +56,13 @@ public:
         return *spTexture_;
     }
 
+    // Getters y Setters para transformar el objeto
+    void setPosition(float x, float y, float z) { position_ = {x, y, z}; }
+    void setScale(float s) { scale_ = s; }
+
+    const Vector3& getPosition() const { return position_; }
+    float getScale() const { return scale_; }
+
     // --- ESTE ES EL MÉTODO ---
     // Devuelve el identificador del Vertex Array Object
     inline GLuint getVao() const { return vao_; }
@@ -71,6 +78,9 @@ private:
     std::vector<Vertex> vertices_;
     std::vector<Index> indices_;
     std::shared_ptr<TextureAsset> spTexture_;
+
+    Vector3 position_ = {0.0f, 0.0f, 0.0f}; // Posición inicial en el centro
+    float scale_ = 1.0f;                    // Escala inicial 1:1
 };
 
 #endif //ANDROIDGLINVESTIGATIONS_MODEL_H
