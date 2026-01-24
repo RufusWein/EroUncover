@@ -24,20 +24,19 @@ public:
     // Nuevo método para eliminar un modelo si ya no lo quieres
     void removeModel(const std::string& id);
 
-    void drawAll(Shader* shader, const float* projectionMatrix, float cameraViewWidth, float cameraViewHeight) const;
+    void drawAll(Shader* shader, const float* projectionMatrix, float cameraViewWidth, float cameraViewHeight);
+
     // Método para limpiar todos los modelos si es necesario
     void clear();
 
 private:
+    void calculateCanvasScale(float& outScaleX, float& outScaleY) const;
+
     AAssetManager* assetManager_ = nullptr; // Se inicializará con init()
 
     //std::unordered_map<std::string, Model> models_;
     std::unordered_map<std::string, std::unique_ptr<Model>> models_;
 
-    // Nuevos miembros para gestionar la escala y resolución
-    float designWidth_ = 0.f;
-    float designHeight_ = 0.f;
-    float screenWidth_ = 0.f;
-    float screenHeight_ = 0.f;
+    Aspect aspect_;
 };
 #endif //EROUNCOVER_MODELMANAGER_H

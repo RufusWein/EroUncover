@@ -5,28 +5,21 @@
 void ModelManager::init(android_app* app, float designWidth, float designHeight) {
     assert(app != nullptr);
     assetManager_ = app->activity->assetManager;
-    designWidth_ = designWidth;
-    designHeight_ = designHeight;
+
+    aspect_.designWidth = designWidth;
+    aspect_.designHeight = designHeight;
+    aspect_.designAspect = aspect_.designWidth / aspect_.designHeight;
 }
 
 // Implementación del nuevo método para dibujar todos los modelos
-void ModelManager::drawAll(Shader* shader, const float* projectionMatrix, float cameraViewWidth, float cameraViewHeight) const {
-    if (!shader || models_.empty() || screenWidth_ == 0.f) {
+void ModelManager::drawAll(Shader* shader, const float* projectionMatrix, float cameraViewWidth, float cameraViewHeight) {
+    if (!shader || models_.empty() || aspect_.screenWidth == 0.f) {
         return;
     }
 
-    const float designAspect = designWidth_ / designHeight_;
-    const float screenAspect = screenWidth_ / screenHeight_;
-
-    float baseScaleX, baseScaleY;
-
-    if (screenAspect > designAspect) {
-        baseScaleY = cameraViewHeight;
-        baseScaleX = baseScaleY * designAspect;
-    } else {
-        baseScaleX = cameraViewWidth;
-        baseScaleY = baseScaleX / designAspect;
-    }
+    // Actualizamos solo lo que depende de la cámara (si cambia la resolución)
+    aspect_.cameraViewWidth = cameraViewWidth;
+    aspect_.canvasScale = cameraViewWidth;
 
     shader->activate();
     shader->setProjectionMatrix(projectionMatrix);
@@ -35,38 +28,28 @@ void ModelManager::drawAll(Shader* shader, const float* projectionMatrix, float 
     for (const auto& item : models_) {
         const Model& model = *(item.second);
 
-        // 1. Calculamos la escala final:
-        // (Escala del sistema) * (Escala individual del modelo)
-        float finalScaleX = baseScaleX * model.getScale();
-        float finalScaleY = baseScaleY * model.getScale();
-
-        // 2. Calculamos la posición:
-        // Convertimos las coordenadas de "espacio de diseño" a "espacio de cámara"
-        // Como el cuadrado 1x1 está centrado, (0,0) en tu diseño será el centro de la pantalla.
-        float posX = model.getPosition().x * (baseScaleX / designWidth_);
-        float posY = model.getPosition().y * (baseScaleY / designHeight_);
-        float posZ = model.getPosition().z; // La Z sirve para el orden de capas (Z-Order)
-
-        // 3. Construimos la matriz de transformación (Model Matrix)
-        float modelMatrix[16];
-
-        // Primero escalamos el cuadrado 1x1
-        Matrix::buildScale(modelMatrix, finalScaleX, finalScaleY, 1.f);
-
-        // Luego aplicamos la traslación (posición) directamente en los componentes de la matriz
-        // m[12]=X, m[13]=Y, m[14]=Z
-        modelMatrix[12] = posX;
-        modelMatrix[13] = posY;
-        modelMatrix[14] = posZ;
-
-        shader->drawModel(model, modelMatrix);
+        shader->drawModel(model, aspect_);
     }
 }
 
 // 2. Implementación de updateScreenSize()
 void ModelManager::updateScreenSize(float screenWidth, float screenHeight) {
-    screenWidth_ = screenWidth;
-    screenHeight_ = screenHeight;
+    aspect_.screenWidth = screenWidth;
+    aspect_.screenHeight = screenHeight;
+}
+
+// Creamos un método privado para obtener la matriz de "Lienzo"
+// Esto limpia el drawAll de cálculos matemáticos pesados
+void ModelManager::calculateCanvasScale(float& outScaleX, float& outScaleY) const {
+    // Calculamos cuánto espacio de la cámara ocupa nuestro ancho de diseño
+    // Como el ancho predomina:
+    outScaleX = aspect_.screenWidth * (aspect_.designWidth / aspect_.screenWidth);
+
+    // Para evitar que se estire, la escala Y DEBE ser proporcional a la X
+    // basándose en el aspect ratio del diseño original.
+    float designAspect = aspect_.designWidth / aspect_.designHeight;
+    outScaleX = aspect_.screenWidth; // El ancho del diseño ocupa todo el ancho de pantalla
+    outScaleY = outScaleX / designAspect;
 }
 
 void ModelManager::addModel(const std::string& id, const std::string& textureName) {

@@ -158,12 +158,31 @@ void Shader::deactivate() const {
 }
 
 // Implementación del nuevo drawModel que acepta la matriz del modelo
-void Shader::drawModel(const Model& model, const float* modelMatrix) const {
+void Shader::drawModel(const Model& model, const Aspect& aspect) const {
+
+    // 2. Construir Matriz del Modelo
+    float modelMatrix[16];
+
+    // Escala Uniforme: Multiplicamos la escala base por la escala del modelo
+    // Dividimos por designWidth para normalizar el espacio
+    float finalScaleX = (aspect.canvasScale * model.getScale());
+    float finalScaleY = (aspect.canvasScale / aspect.designAspect) * model.getScale();
+
+    Matrix::buildScale(modelMatrix, finalScaleX, finalScaleY, 1.f);
+
+    // 3. Posicionamiento: Convertimos coordenadas 1080p a espacio de mundo
+    // Multiplicamos la coordenada por (AnchoCámara / AnchoDiseño)
+    float factorX = aspect.cameraViewWidth / aspect.designWidth;
+    float factorY = (aspect.cameraViewWidth / aspect.designAspect) / aspect.designHeight;
+
+    modelMatrix[12] = model.getPosition().x * factorX;
+    modelMatrix[13] = model.getPosition().y * factorY;
+    modelMatrix[14] = model.getPosition().z;
+
     aout << "Dibujando: Activando Shader" << std::endl;
     glUseProgram(program_);
 
     glUniformMatrix4fv(modelMatrix_, 1, GL_FALSE, modelMatrix);
-
 
     // ¡AHORA EL VAO SÍ TIENE DATOS!
     glBindVertexArray(model.getVao());

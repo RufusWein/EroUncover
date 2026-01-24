@@ -3,6 +3,8 @@
 
 #include <string>
 #include <GLES3/gl3.h>
+#include "../tools/Matrix.h" // Necesitaremos esto para las matrices
+#include "Aspect.h"
 
 class Model;
 
@@ -60,7 +62,7 @@ public:
      * Renders a single model
      * @param model a model to render
      */
-    void drawModel(const Model &model, const float* modelMatrix) const;
+    void drawModel(const Model &model, const Aspect& aspect) const;
 
     /*!
      * Sets the model/view/projection matrix in the shader.
